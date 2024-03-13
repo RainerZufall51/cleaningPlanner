@@ -1,8 +1,7 @@
 import { QueryTypes } from 'sequelize';
 import { getMySQLConnection } from '../helper/connection';
-import { v4 as uuid } from 'uuid';
 import { Person } from '../../types/Person';
-import DbPerson from '../db/db.iteration';
+import { v4 as uuid } from 'uuid';
 
 /**
  * Searches for a creates person by id
@@ -10,14 +9,20 @@ import DbPerson from '../db/db.iteration';
  * @returns person if found, null otherwise
  */
 export async function getPersonById(personId: string): Promise<Person | null> {
-    const person: Person = {
-        personId: '',
-        prename: '',
-        surname: '',
-        active: false
-    };
+    const db = await getMySQLConnection();
 
-    return person;
+    const personArr: Person[] = await db.query(
+        `SELECT *
+            FROM person
+            WHERE personId = $personId`,
+        { type: QueryTypes.SELECT, bind: { personId } }
+    );
+
+    if(personArr.length === 0) {
+        return null;
+    }
+
+    return personArr[0];
 }
 
 /**
@@ -37,7 +42,7 @@ export async function getPersonByName(
             WHERE prename = $prename
                 AND surname = $surname`,
         {
-            bind: { prename: prename, surname: surname },
+            bind: { prename, surname },
             type: QueryTypes.SELECT
         }
     );
@@ -56,37 +61,35 @@ export async function getPersonByName(
  */
 export async function createPerson(
     person: Person
-): Promise<Person | undefined> {
-    // try {
-    //     const personDb = await getPersonByName(person.prename, person.surname);
+): Promise<Person | string> {
+    try {
+        const personDb = await getPersonByName(person.prename, person.surname);
+        
+        if (personDb) {
+            throw new Error('Person already exists');
+        }
+        const db = await getMySQLConnection();
 
-    //     if (personDb) {
-    //         throw new Error('Person already exists');
-    //     }
+        const personId = uuid();
+        await db.query(
+            `
+            INSERT INTO person (personId, prename, surname, active)
+                VALUES ($personId, $prename, $surname, $active)`,
+            {
+                bind: {
+                    personId: personId,
+                    prename: person.prename,
+                    surname: person.surname,
+                    active: true
+                },
+                type: QueryTypes.INSERT
+            }
+        );
 
-    //     const personId = uuid();
-    //     const db = await getMySQLConnection();
-    //     await db.query(
-    //         `
-    //         INSERT INTO person (personId, prename, surname, active)
-    //             VALUES ($personId, $prename, $surname, $active)`,
-    //         {
-    //             bind: {
-    //                 personId: personId,
-    //                 prename: person.prename,
-    //                 surname: person.surname,
-    //                 active: true
-    //             },
-    //             type: QueryTypes.INSERT
-    //         }
-    //     );
-
-    //     return person;
-    // } catch (error: any) {
-    //     new Error('Error while creating person: ', error);
-    // }
-    const dbperson: Person = await DbPerson.create(person);
-    return person;
+        return person;
+    } catch (error: any) {
+        return 'Error while creating person: ' + error.message;
+    }
 }
 
 /**
@@ -122,7 +125,7 @@ export async function updatePerson(
 
         return person;
     } catch (error: any) {
-        throw new Error('Error while updating person: ', error.message);
+        throw new Error('Error while updating person: ' + error.message);
     }
 }
 
@@ -133,7 +136,8 @@ export async function updatePerson(
 export async function deletePerson(personId: string): Promise<void> {
     const db = await getMySQLConnection();
 
-    await db.query(`DELETE from person where personId = $personId`, {
+    await db.query(`DELETE from person
+                        WHERE personId = $personId`, {
         bind: { personId: personId }
     });
 }

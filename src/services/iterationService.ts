@@ -109,6 +109,6 @@ export async function updateIteration(
 
         return iteration;
     } catch (error: any) {
-        throw new Error('Error updating iteration', error.message);
+        throw new Error('Error updating iteration' + error.message);
     }
 }

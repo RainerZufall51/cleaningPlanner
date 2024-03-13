@@ -30,7 +30,7 @@ export async function createIterationTask(iterationTask: IterationTask): Promise
 
         return iterationTask;
     } catch (error: any) {
-        throw new Error('Error creating iterationTask: ', error);
+        throw new Error('Error creating iterationTask: ' + error);
     }
 }
 

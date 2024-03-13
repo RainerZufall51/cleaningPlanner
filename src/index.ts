@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMySQLConnection} from './helper/connection';
+import { getMySQLConnection } from './helper/connection';
 import { QueryTypes } from 'sequelize';
 import { Person } from '../types/Person';
 import bodyParser from 'body-parser';
@@ -10,7 +10,6 @@ import {
     getPersonByName,
     updatePerson
 } from './services/personService';
-import { Task } from '../types/Task';
 import {
     createTask,
     deleteTask,
@@ -19,7 +18,6 @@ import {
     updateTask
 } from './services/taskService';
 import { Iteration } from '../types/Iteration';
-import { create } from 'lodash';
 import {
     createIteration,
     getIterationById,
@@ -72,7 +70,13 @@ app.post('/person', async (req, res) => {
 
     try {
         const personResult = await createPerson(person);
-        res.json({ personResult });
+        let status = 200;
+
+        if(typeof(personResult) === 'string') {
+            status = 500;
+        }
+
+        res.status(status).json({ personResult });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -217,4 +221,3 @@ app.put('/iterationTask', async (req, res) => {
 app.put('/iterationTask/setDone', async (req, res) => {
     res.status(404).json({ message: 'Not yet implemented' });
 });
-
