@@ -1,0 +1,9 @@
+version: '3.8'
+# Use this for local integration testing, creates locally accessible db container which needs to be filled with data with the setup script.
+services:
+    mysql:
+        image: mysql:8.0.20
+        environment:
+            - MYSQL_ALLOW_EMPTY_PASSWORD=true
+        ports:
+            - 3306:3306
